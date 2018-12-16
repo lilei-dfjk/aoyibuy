@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:p="http://www.springframework.org/schema/p" xmlns:c="http://www.springframework.org/schema/c" xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:jdbc="http://www.springframework.org/schema/jdbc" xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:util="http://www.springframework.org/schema/util" xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+        http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+        http://www.springframework.org/schema/data/jpa http://www.springframework.org/schema/data/jpa/spring-jpa.xsd">
+        
+    <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close" 
+        c:configuration-ref="hikariConfig" />
+            
+    <bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig"
+        p:poolName="SpringHikariCP"
+        p:driverClassName="${db.driverClassName}"
+        p:jdbcUrl="${db.jdbcUrl}" 
+        p:username="${db.username}" 
+        p:password="${db.password}" 
+        p:maxLifetime="${db.connection.maxLifetime}" 
+        p:minimumIdle="${db.pool.minimumIdle}"
+        p:maximumPoolSize="${db.pool.maximumPoolSize}" />
+
+    <!-- Jpa Entity Manager 配置 -->
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean" 
+        p:dataSource-ref="dataSource"
+        p:jpaVendorAdapter-ref="hibernateJpaVendorAdapter"
+        p:packagesToScan="com.aoyibuy.dao.jpa.entity"
+        p:jpaProperties-ref="jpaProperties" />
+    <util:map id="jpaProperties">
+        <entry key="hibernate.ejb.naming_strategy" value="org.hibernate.cfg.ImprovedNamingStrategy" />
+        <entry key="hibernate.hbm2ddl.auto" value="${hibernate.hbm2ddl.auto}" />
+    </util:map>
+
+    <bean id="hibernateJpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter" 
+        p:databasePlatform="${jpa.vendor.dialect}" />
+        
+    <!-- Spring Data Jpa配置 -->
+    <jpa:repositories base-package="com.aoyibuy.dao.jpa.repo"
+        transaction-manager-ref="transactionManager" entity-manager-factory-ref="entityManagerFactory" />
+
+    <!-- Jpa 事务配置 -->
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager" 
+        p:entityManagerFactory-ref="entityManagerFactory" />
+
+    <!-- 使用annotation定义事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true" />
+    
+</beans>
